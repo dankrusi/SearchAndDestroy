@@ -53,7 +53,7 @@ Explanation:
 
  - ```--dir C:\SearchAndDestroy\src```: set the directory to do the find-and-replace to ```C:\SearchAndDestroy\src```
  - ```--replace SearchAndDestroy FindAndReplace```: replace all ```SearchAndDestroy``` with ```FindAndReplace```
- - ```include *.*```: include all files matching the pattern ```*.*```
+ - ```--include *.*```: include all files matching the pattern ```*.*```
  - ```--exclude .* bin obj```: exclude all files/directories that match the any of the following patterns: ```.*```, ```bin```, ```obj```
  
  Output:
