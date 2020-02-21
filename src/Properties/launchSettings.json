@@ -10,6 +10,10 @@
     "DryRun": {
       "commandName": "Project",
       "commandLineArgs": "--dir C:\\SearchAndDestroy\\src --replace SearchAndDestroy FindAndReplace --include *.* --exclude .* bin obj --verbose --dry-run"
+    },
+    "DryRun Blackbox": {
+      "commandName": "Project",
+      "commandLineArgs": "--dir C:\\Blackbox --replace Blackbox Machinata blackbox machinata --include *.cs *.js *.txt *.htm *.thml *.csproj *.sln --exclude .* .git bin obj  --dry-run"
     }
   }
 }

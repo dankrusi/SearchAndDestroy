@@ -145,6 +145,7 @@ namespace SearchAndDestroy {
 
                        // Proces each root dir
                        foreach (var dir in opts.Directories) {
+                           if (!opts.Verbose) Console.WriteLine($"Dir {dir}...");
                            ProcessDirectory(dir, 0, opts);
                        }
 
@@ -166,7 +167,7 @@ namespace SearchAndDestroy {
         }
 
         static void ProcessDirectory(string dir, int depth, Options opts) {
-            Console.WriteLine($"Dir {dir}...");
+            if(opts.Verbose) Console.WriteLine($"Dir {dir}...");
             if(opts.Slow) Console.ReadLine();
 
             // Change dir name?
@@ -246,12 +247,15 @@ namespace SearchAndDestroy {
         }
 
         static void RenameDir(string source, string dest, Options opts) {
+            if (opts.DryRun) return; // should never happen
             if (opts.UseGitMove) {
                 // Git move
+                if (opts.Verbose) Console.WriteLine($"  Executing 'git mv {source} {dest}'");
                 var proc = Process.Start("git", $"mv {source} {dest}");
                 proc.WaitForExit();
                 if (proc.ExitCode != 0) {
                     // Fallback to system move
+                    if (opts.Verbose) Console.WriteLine($"  Git command failed with exit code {proc.ExitCode}");
                     System.IO.Directory.Move(source, dest);
                 }
             } else {
@@ -261,12 +265,15 @@ namespace SearchAndDestroy {
         }
 
         static void RenameFile(string source, string dest, Options opts) {
+            if (opts.DryRun) return; // should never happen
             if (opts.UseGitMove) {
                 // Git move
+                if (opts.Verbose) Console.WriteLine($"    Executing 'git mv {source} {dest}'");
                 var proc = Process.Start("git", $"mv {source} {dest}");
                 proc.WaitForExit();
                 if (proc.ExitCode != 0) {
                     // Fallback to system move
+                    if (opts.Verbose) Console.WriteLine($"  Git command failed with exit code {proc.ExitCode}");
                     System.IO.File.Move(source, dest);
                 }
             } else {
@@ -276,7 +283,7 @@ namespace SearchAndDestroy {
         }
 
         static void ProcessFile(string dir, int depth, Options opts, string file) {
-            Console.WriteLine($"  Found file {file}...");
+            if(opts.Verbose) Console.WriteLine($"  Found file {file}...");
             if (opts.Slow) Console.ReadLine();
 
             // Change file name?
@@ -313,6 +320,7 @@ namespace SearchAndDestroy {
 
             // Open file
             var fileContents = System.IO.File.ReadAllText(file);
+            var totalMatches = 0;
 
             // Loop each find/replace pair
             foreach (var find in opts.FindReplacePairs.Keys) {
@@ -329,7 +337,8 @@ namespace SearchAndDestroy {
                     }
 
                     // Register in stats
-                    if(opts.FindReplaceStatsContents.ContainsKey(find)) {
+                    totalMatches += matches.Count;
+                    if (opts.FindReplaceStatsContents.ContainsKey(find)) {
                         opts.FindReplaceStatsContents[find] += matches.Count;
                     } else {
                         opts.FindReplaceStatsContents[find] = matches.Count;
@@ -338,15 +347,22 @@ namespace SearchAndDestroy {
                     // Do replace
                     fileContents = fileContents.Replace(find, replace);
                     
-                    // Write out again
-                    if(opts.DryRun == false) {
-                        Console.WriteLine($"    Writing file...");
-                        System.IO.File.WriteAllText(file,fileContents);
-                    }
                 }
 
-
             }
+
+            // Write out again?
+            if (totalMatches > 0) {
+                if (opts.DryRun == false) {
+                    if (opts.Verbose) Console.WriteLine($"    Writing file...");
+                    System.IO.File.WriteAllText(file, fileContents);
+                }
+
+                Console.WriteLine($"  {file}: {totalMatches}x");
+            }
+
         }
+
+
     }
 }
