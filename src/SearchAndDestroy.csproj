@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Description>test</Description>
+    <Authors>Dan Krusi</Authors>
+    <PackageProjectUrl>https://github.com/dankrusi/SearchAndDestroy</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="TestDir - Copy\**" />
+    <Compile Remove="TestDir\**" />
+    <EmbeddedResource Remove="TestDir - Copy\**" />
+    <EmbeddedResource Remove="TestDir\**" />
+    <None Remove="TestDir - Copy\**" />
+    <None Remove="TestDir\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.7.82" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
+    "RealRun": {
+      "commandName": "Project"
+    },
+    "DryRun": {
+      "commandName": "Project",
+      "commandLineArgs": "--dir C:\\SearchAndDestroy\\src --replace SearchAndDestroy FindAndReplace --include *.* --exclude .* bin obj --verbose --dry-run"
+    }
+  }
+}
