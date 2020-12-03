@@ -2,6 +2,7 @@ using CommandLine;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SearchAndDestroy {
@@ -15,6 +16,8 @@ namespace SearchAndDestroy {
             public Dictionary<string, int> FindReplaceStatsContents { get; set; }
             public Dictionary<string, int> FindReplaceStatsFiles { get; set; }
             public Dictionary<string, int> FindReplaceStatsDirs { get; set; }
+            public Dictionary<string, int> FileTypeStats { get; set; }
+            public Dictionary<string, int> FileContentReplaceStats { get; set; }
 
 
 
@@ -95,6 +98,14 @@ namespace SearchAndDestroy {
                 HelpText = "If set, a \"git mv\" command is attempted if any directories or files are to be renamed."
             )]
             public bool UseGitMove { get; set; }
+
+            [Option(
+                'b', "binary",
+                Required = false,
+                Default = false,
+                HelpText = "If true, contents inside binary files will also be replaced (not recommended)."
+            )]
+            public bool Binary { get; set; }
         }
 
         static void Main(string[] args) {
@@ -108,6 +119,8 @@ namespace SearchAndDestroy {
                        opts.FindReplaceStatsContents = new Dictionary<string, int>();
                        opts.FindReplaceStatsFiles = new Dictionary<string, int>();
                        opts.FindReplaceStatsDirs = new Dictionary<string, int>();
+                       opts.FileTypeStats = new Dictionary<string, int>();
+                       opts.FileContentReplaceStats = new Dictionary<string, int>();
 
 
                        var replaces = new List<string>(opts.Replaces);
@@ -151,6 +164,12 @@ namespace SearchAndDestroy {
 
                        // Stats
                        Console.WriteLine("");
+
+                       Console.WriteLine($"Found files:");
+                       foreach (var ext in opts.FileTypeStats.Keys) {
+                           var count = opts.FileTypeStats[ext];
+                           Console.WriteLine($"  {ext}: {count}x");
+                       }
                        foreach (var find in opts.FindReplaceStatsContents.Keys) {
                            var count = opts.FindReplaceStatsContents[find];
                            Console.WriteLine($"Replaced '{find}' in file contents {count}x");
@@ -162,6 +181,11 @@ namespace SearchAndDestroy {
                        foreach (var find in opts.FindReplaceStatsFiles.Keys) {
                            var count = opts.FindReplaceStatsFiles[find];
                            Console.WriteLine($"Replaced '{find}' in file name {count}x");
+                       }
+                       Console.WriteLine($"Replaced inside files:");
+                       foreach (var ext in opts.FileContentReplaceStats.Keys) {
+                           var count = opts.FileContentReplaceStats[ext];
+                           Console.WriteLine($"  {ext}: {count}x");
                        }
                    });
         }
@@ -286,10 +310,18 @@ namespace SearchAndDestroy {
             if(opts.Verbose) Console.WriteLine($"  Found file {file}...");
             if (opts.Slow) Console.ReadLine();
 
+            // Init
+            var fileInfo = new System.IO.FileInfo(file);
+
             // Change file name?
             {
-                var fileInfo = new System.IO.FileInfo(file);
                 var newFileName = fileInfo.Name;
+                // Register in stats
+                if (opts.FileTypeStats.ContainsKey(fileInfo.Extension)) {
+                    opts.FileTypeStats[fileInfo.Extension] += 1;
+                } else {
+                    opts.FileTypeStats[fileInfo.Extension] = 1;
+                }
                 // Loop each find/replace pair
                 foreach (var find in opts.FindReplacePairs.Keys) {
                     var replace = opts.FindReplacePairs[find];
@@ -322,6 +354,10 @@ namespace SearchAndDestroy {
             var fileContents = System.IO.File.ReadAllText(file);
             var totalMatches = 0;
 
+            // Skip file contents if it is binary...
+            var isBinary = fileContents.Any(ch => char.IsControl(ch) && ch != '\r' && ch != '\n' && ch != '\t');
+            if (opts.Binary == false && isBinary == true) return;
+
             // Loop each find/replace pair
             foreach (var find in opts.FindReplacePairs.Keys) {
                 var replace = opts.FindReplacePairs[find];
@@ -353,6 +389,14 @@ namespace SearchAndDestroy {
 
             // Write out again?
             if (totalMatches > 0) {
+
+                // Register in stats
+                if (opts.FileContentReplaceStats.ContainsKey(fileInfo.Extension)) {
+                    opts.FileContentReplaceStats[fileInfo.Extension] += 1;
+                } else {
+                    opts.FileContentReplaceStats[fileInfo.Extension] = 1;
+                }
+
                 if (opts.DryRun == false) {
                     if (opts.Verbose) Console.WriteLine($"    Writing file...");
                     System.IO.File.WriteAllText(file, fileContents);
